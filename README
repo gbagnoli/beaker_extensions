@@ -25,3 +25,22 @@ CouchDB must be at localhost:5984 and in admin party mode. Test script will
 attempt to create a database named 'beaker_extension_test'.
     Documents of sessions have keys similar to 'beaker:sha-hash:session', and
 'type' fields set to 'beaker.session'.
+
+== Information for Redis backend =============================================
+
+beaker.session.type = redis
+beaker.session.url = localhost:6379?db=3
+beaker.session.prefix = myprefix
+
+Note: 
+You can use the same redis instance to serve as cache/session backend for 
+multiple applications. This can be achieved in two ways:
+
+- selecting a particular database using db=XX in the query string of the url,
+with a different database per application (ignoring the prefix param)
+- using a different prefix for each application within the same database
+
+Using a prefix works as the "clear" operation does not trigger a FLUSHDB,
+but instead the backend keeps (on redis) a set with all the keys created:
+when clearing all the namespace, this set is read and (in an pipelined atomic
+transaction) all keys are deleted (set included).
