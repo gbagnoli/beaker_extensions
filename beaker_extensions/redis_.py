@@ -1,4 +1,5 @@
 import logging
+
 from beaker.exceptions import InvalidCacheBackendError
 
 from beaker_extensions.nosql import Container
@@ -19,15 +20,6 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 
-class NoLock(object):
-
-    def acquire(self):
-        return True
-
-    def release(self):
-        return True
-
-
 class RedisManager(NoSqlManager):
     def __init__(self, namespace, url=None, data_dir=None, lock_dir=None, **params):
         self.prefix = params.pop('prefix', "")
@@ -37,10 +29,6 @@ class RedisManager(NoSqlManager):
 
     def open_connection(self, host, port, **params):
         self.db_conn = Redis(host=host, port=int(port), **params)
-
-    def get_creation_lock(self, key):
-        # redis operations are atomic, plus keys are really never created.
-        return NoLock()
 
     def __contains__(self, key):
         log.debug('%s contained in redis cache (as %s) : %s'%(key, self._format_key(key), self.db_conn.exists(self._format_key(key))))
@@ -55,7 +43,6 @@ class RedisManager(NoSqlManager):
 
     def __delitem__(self, key):
         key = self._format_key(key)
-#        self.db_conn.watch(self.full_prefix)
         pipe = self.db_conn.pipeline(transaction=True)
         pipe.delete(key)
         pipe.srem(self.full_prefix, key)
