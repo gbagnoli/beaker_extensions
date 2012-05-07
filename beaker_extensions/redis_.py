@@ -25,10 +25,11 @@ class RedisManager(NoSqlManager):
         self.prefix = params.pop('prefix', "")
         # full_prefix is used as a key itself for storing the set of all keys
         self.full_prefix = "beaker:{0}:{1}".format(self.prefix, namespace)
+        self.connection_pool = params.pop('connection_pool', None)
         NoSqlManager.__init__(self, namespace, url=url, data_dir=data_dir, lock_dir=lock_dir, **params)
 
     def open_connection(self, host, port, **params):
-        self.db_conn = Redis(host=host, port=int(port), **params)
+        self.db_conn = Redis(host=host, port=int(port), connection_pool=self.connection_pool, **params)
 
     def __contains__(self, key):
         log.debug('%s contained in redis cache (as %s) : %s'%(key, self._format_key(key), self.db_conn.exists(self._format_key(key))))
